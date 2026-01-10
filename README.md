@@ -2,7 +2,7 @@
 
 **Zen Monitor** is a high-performance, aesthetically pleasing system monitoring tool designed for **Arch Linux (Hyprland)**, but compatible with all major Linux distributions and Windows 11. Built with **Rust** and `egui`, it features a "Cyberpunk/Glassmorphism" UI with real-time graphs and GPU support.
 
-![Zen Monitor](https://via.placeholder.com/800x400.png?text=Preview+Image+Here)
+![Zen Monitor](https://placehold.co/800x400?text=Zen+Monitor+Preview)
 
 ## Features
 *   **Aesthetics:** Transparent, borderless window designed for tiling window managers (Hyprland, Sway) or modern Windows setups.

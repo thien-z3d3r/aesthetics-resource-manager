@@ -7,14 +7,74 @@ use std::process::Command;
 use std::time::{Duration, Instant};
 use std::f32::consts::PI;
 
-// --- CYBERPUNK PALETTE ---
-const COL_BG: Color32 = Color32::from_rgba_premultiplied(10, 12, 20, 220); // Semi-transparent dark
-const COL_ACCENT_1: Color32 = Color32::from_rgb(255, 0, 110);   // Neon Pink
-const COL_ACCENT_2: Color32 = Color32::from_rgb(0, 246, 255);   // Cyber Cyan
-const COL_ACCENT_3: Color32 = Color32::from_rgb(255, 214, 10);  // Electric Yellow
-const COL_BORDER: Color32 = Color32::from_rgb(60, 60, 80);
-const COL_TEXT_MAIN: Color32 = Color32::from_rgb(230, 230, 240);
-const COL_TEXT_DIM: Color32 = Color32::from_rgb(120, 130, 150);
+#[derive(Clone, PartialEq)]
+struct Theme {
+    name: String,
+    bg: Color32,
+    accent1: Color32,
+    accent2: Color32,
+    accent3: Color32,
+    border: Color32,
+    text_main: Color32,
+    text_dim: Color32,
+}
+
+impl Theme {
+    fn presets() -> Vec<Theme> {
+        vec![
+            Theme {
+                name: "Cyberpunk".to_string(),
+                bg: Color32::from_rgba_premultiplied(10, 12, 20, 220),
+                accent1: Color32::from_rgb(255, 0, 110),
+                accent2: Color32::from_rgb(0, 246, 255),
+                accent3: Color32::from_rgb(255, 214, 10),
+                border: Color32::from_rgb(60, 60, 80),
+                text_main: Color32::from_rgb(230, 230, 240),
+                text_dim: Color32::from_rgb(120, 130, 150),
+            },
+            Theme {
+                name: "Catppuccin Mocha".to_string(),
+                bg: Color32::from_rgba_premultiplied(30, 30, 46, 220),
+                accent1: Color32::from_rgb(243, 139, 168), // Red
+                accent2: Color32::from_rgb(137, 180, 250), // Blue
+                accent3: Color32::from_rgb(249, 226, 175), // Yellow
+                border: Color32::from_rgb(49, 50, 68),
+                text_main: Color32::from_rgb(205, 214, 244),
+                text_dim: Color32::from_rgb(166, 173, 200),
+            },
+            Theme {
+                name: "Tokyo Night".to_string(),
+                bg: Color32::from_rgba_premultiplied(26, 27, 38, 220),
+                accent1: Color32::from_rgb(247, 118, 142),
+                accent2: Color32::from_rgb(122, 162, 247),
+                accent3: Color32::from_rgb(224, 175, 104),
+                border: Color32::from_rgb(65, 72, 104),
+                text_main: Color32::from_rgb(192, 202, 245),
+                text_dim: Color32::from_rgb(86, 95, 137),
+            },
+            Theme {
+                name: "Dark Traditional".to_string(),
+                bg: Color32::from_rgba_premultiplied(18, 18, 18, 220),
+                accent1: Color32::from_rgb(187, 134, 252),
+                accent2: Color32::from_rgb(3, 218, 198),
+                accent3: Color32::from_rgb(207, 102, 121),
+                border: Color32::from_rgb(51, 51, 51),
+                text_main: Color32::from_rgb(255, 255, 255),
+                text_dim: Color32::from_rgb(176, 176, 176),
+            },
+            Theme {
+                name: "Light Traditional".to_string(),
+                bg: Color32::from_rgba_premultiplied(255, 255, 255, 220),
+                accent1: Color32::from_rgb(98, 0, 238),
+                accent2: Color32::from_rgb(3, 218, 198),
+                accent3: Color32::from_rgb(176, 0, 32),
+                border: Color32::from_rgb(224, 224, 224),
+                text_main: Color32::from_rgb(0, 0, 0),
+                text_dim: Color32::from_rgb(96, 96, 96),
+            },
+        ]
+    }
+}
 
 struct GpuData {
     usage: f32,
@@ -44,6 +104,10 @@ struct ZenMonitor {
     start_time: Instant,
     last_update: Instant,
     gpu_timer: Instant,
+    
+    // Theme
+    themes: Vec<Theme>,
+    current_theme_index: usize,
 }
 
 impl ZenMonitor {
@@ -67,6 +131,8 @@ impl ZenMonitor {
             start_time: Instant::now(),
             last_update: Instant::now(),
             gpu_timer: Instant::now() - Duration::from_secs(5),
+            themes: Theme::presets(),
+            current_theme_index: 0,
         }
     }
 
@@ -101,7 +167,7 @@ impl ZenMonitor {
 
 // --- CUSTOM WIDGETS ---
 
-fn draw_cyber_gauge(ui: &mut egui::Ui, pct: f32, color: Color32, label: &str, val: &str) {
+fn draw_cyber_gauge(ui: &mut egui::Ui, pct: f32, color: Color32, label: &str, val: &str, theme: &Theme) {
     let size = Vec2::new(100.0, 120.0);
     let (rect, _) = ui.allocate_exact_size(size, Sense::hover());
     let p = ui.painter();
@@ -109,7 +175,12 @@ fn draw_cyber_gauge(ui: &mut egui::Ui, pct: f32, color: Color32, label: &str, va
     let radius = 38.0;
 
     // Background Ring (Dim)
-    p.circle_stroke(center, radius, Stroke::new(4.0, Color32::from_white_alpha(10)));
+    let ring_color = if theme.name.contains("Light") {
+        Color32::from_black_alpha(20)
+    } else {
+        Color32::from_white_alpha(10)
+    };
+    p.circle_stroke(center, radius, Stroke::new(4.0, ring_color));
     
     // Value Arc
     let start = PI * 0.75;
@@ -125,27 +196,37 @@ fn draw_cyber_gauge(ui: &mut egui::Ui, pct: f32, color: Color32, label: &str, va
     
     if pts.len() > 1 {
         // Glow
-        p.add(egui::Shape::line(pts.clone(), Stroke::new(12.0, color.gamma_multiply(0.2)))); 
+        if !theme.name.contains("Light") {
+             p.add(egui::Shape::line(pts.clone(), Stroke::new(12.0, color.gamma_multiply(0.2)))); 
+        }
         // Core
         p.add(egui::Shape::line(pts, Stroke::new(3.0, color)));
     }
 
     // Text
-    p.text(center, egui::Align2::CENTER_CENTER, format!("{:.0}%", pct), FontId::proportional(18.0), COL_TEXT_MAIN);
+    p.text(center, egui::Align2::CENTER_CENTER, format!("{:.0}%", pct), FontId::proportional(18.0), theme.text_main);
     p.text(center + Vec2::new(0.0, radius + 20.0), egui::Align2::CENTER_CENTER, label, FontId::monospace(14.0), color);
-    p.text(center + Vec2::new(0.0, radius + 36.0), egui::Align2::CENTER_CENTER, val, FontId::proportional(11.0), COL_TEXT_DIM);
+    p.text(center + Vec2::new(0.0, radius + 36.0), egui::Align2::CENTER_CENTER, val, FontId::proportional(11.0), theme.text_dim);
 }
 
-fn custom_window_frame(ctx: &egui::Context, _frame: &mut eframe::Frame, title: &str, content: impl FnOnce(&mut egui::Ui)) {
-    let text_color = COL_TEXT_MAIN;
+fn custom_window_frame(
+    ctx: &egui::Context, 
+    _frame: &mut eframe::Frame, 
+    title: &str, 
+    theme: &Theme,
+    themes: &[Theme],
+    current_theme_index: &mut usize,
+    content: impl FnOnce(&mut egui::Ui)
+) {
+    let text_color = theme.text_main;
     
     // Updated Frame struct for egui 0.33+
     let panel_frame = egui::Frame {
-        fill: COL_BG,
-        corner_radius: CornerRadius::same(12), // Integer
-        stroke: Stroke::new(1.0, COL_BORDER),
-        inner_margin: egui::Margin::same(15), // Integer
-        outer_margin: egui::Margin::same(0),  // Integer
+        fill: theme.bg,
+        corner_radius: CornerRadius::same(12),
+        stroke: Stroke::new(1.0, theme.border),
+        inner_margin: egui::Margin::same(15),
+        outer_margin: egui::Margin::same(0),
         ..Default::default()
     };
 
@@ -158,37 +239,60 @@ fn custom_window_frame(ctx: &egui::Context, _frame: &mut eframe::Frame, title: &
         // Window Dragging
         let title_bar_response = ui.interact(title_bar_rect, Id::new("title_bar"), Sense::click_and_drag());
         if title_bar_response.dragged() {
-            // New Way: send command to viewport
             ctx.send_viewport_cmd(ViewportCommand::StartDrag);
         }
 
         // Paint Title Bar
         let painter = ui.painter();
+        let divider_color = if theme.name.contains("Light") {
+            Color32::from_black_alpha(20)
+        } else {
+            Color32::from_white_alpha(20)
+        };
+        
         painter.line_segment(
             [Pos2::new(app_rect.min.x + 10.0, app_rect.min.y + title_bar_height), 
              Pos2::new(app_rect.max.x - 10.0, app_rect.min.y + title_bar_height)],
-            Stroke::new(1.0, Color32::from_white_alpha(20))
+            Stroke::new(1.0, divider_color)
         );
         
+        // Title
         painter.text(
-            title_bar_rect.center(),
-            egui::Align2::CENTER_CENTER,
+            Pos2::new(title_bar_rect.min.x + 15.0, title_bar_rect.center().y),
+            egui::Align2::LEFT_CENTER,
             title,
             FontId::proportional(14.0),
             text_color,
         );
-
-        // Close Button
-        let close_rect = Rect::from_center_size(
-            Pos2::new(title_bar_rect.max.x - 20.0, title_bar_rect.center().y), 
-            Vec2::new(16.0, 16.0)
+        
+        // Theme Switcher & Close Button Container
+        let controls_rect = Rect::from_min_max(
+            Pos2::new(title_bar_rect.max.x - 150.0, title_bar_rect.min.y),
+            Pos2::new(title_bar_rect.max.x, title_bar_rect.max.y)
         );
-        let close_resp = ui.put(close_rect, egui::Button::new(RichText::new("X").size(12.0).color(Color32::from_rgb(200, 50, 50)))
-            .frame(false));
-            
-        if close_resp.clicked() {
-             ctx.send_viewport_cmd(ViewportCommand::Close);
-        }
+        
+        ui.allocate_ui_at_rect(controls_rect, |ui| {
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.add_space(10.0);
+                
+                // Close Button
+                if ui.button(RichText::new(" X ").color(Color32::from_rgb(200, 50, 50))).clicked() {
+                    ctx.send_viewport_cmd(ViewportCommand::Close);
+                }
+                
+                ui.add_space(5.0);
+        
+                // Theme ComboBox
+                egui::ComboBox::from_id_salt("theme_selector")
+                    .selected_text(RichText::new(&themes[*current_theme_index].name).size(12.0).color(text_color))
+                    .width(100.0)
+                    .show_ui(ui, |ui| {
+                        for (i, t) in themes.iter().enumerate() {
+                            ui.selectable_value(current_theme_index, i, &t.name);
+                        }
+                    });
+            });
+        });
 
         ui.add_space(title_bar_height);
         content(ui);
@@ -220,21 +324,43 @@ impl eframe::App for ZenMonitor {
             self.gpu_timer = now;
         }
 
+        let current_theme = &self.themes[self.current_theme_index];
+        let mut selected_theme_index = self.current_theme_index;
+
         // Draw
-        custom_window_frame(ctx, frame, "ZEN MONITOR // SYSTEM_HUD", |ui| {
+        custom_window_frame(
+            ctx, 
+            frame, 
+            "ZEN MONITOR // SYSTEM_HUD", 
+            current_theme,
+            &self.themes,
+            &mut selected_theme_index,
+            |ui| {
              ui.add_space(5.0);
              
              // --- Gauges Container ---
+             let bg_fill = if current_theme.name.contains("Light") {
+                 Color32::from_black_alpha(10)
+             } else {
+                 Color32::from_black_alpha(40)
+             };
+             
+             let border_stroke = if current_theme.name.contains("Light") {
+                 Color32::from_black_alpha(10)
+             } else {
+                 Color32::from_white_alpha(10)
+             };
+
              egui::Frame::group(ui.style())
-                .fill(Color32::from_black_alpha(40))
-                .stroke(Stroke::new(1.0, Color32::from_white_alpha(10)))
-                .corner_radius(CornerRadius::same(8)) // Integer
+                .fill(bg_fill)
+                .stroke(Stroke::new(1.0, border_stroke))
+                .corner_radius(CornerRadius::same(8))
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
                         ui.columns(3, |cols| {
-                            draw_cyber_gauge(&mut cols[0], self.system.global_cpu_usage(), COL_ACCENT_1, "CPU", &format!("{:.0}°C", self.get_cpu_temp()));
-                            draw_cyber_gauge(&mut cols[1], (self.system.used_memory() as f32 / self.system.total_memory() as f32) * 100.0, COL_ACCENT_2, "RAM", &format!("{:.1}GB", self.system.used_memory() as f32/1e9));
-                            draw_cyber_gauge(&mut cols[2], self.gpu_data.usage, COL_ACCENT_3, "GPU", &format!("{:.0}°C", self.gpu_data.temp));
+                            draw_cyber_gauge(&mut cols[0], self.system.global_cpu_usage(), current_theme.accent1, "CPU", &format!("{:.0}°C", self.get_cpu_temp()), current_theme);
+                            draw_cyber_gauge(&mut cols[1], (self.system.used_memory() as f32 / self.system.total_memory() as f32) * 100.0, current_theme.accent2, "RAM", &format!("{:.1}GB", self.system.used_memory() as f32/1e9), current_theme);
+                            draw_cyber_gauge(&mut cols[2], self.gpu_data.usage, current_theme.accent3, "GPU", &format!("{:.0}°C", self.gpu_data.temp), current_theme);
                         });
                     });
                     ui.add_space(5.0);
@@ -250,20 +376,22 @@ impl eframe::App for ZenMonitor {
                 .y_axis_min_width(20.0)
                 .include_y(0.0).include_y(100.0)
                 .show_background(false)
-                .legend(egui_plot::Legend::default().background_alpha(0.5));
+                .legend(egui_plot::Legend::default().background_alpha(0.5).text_style(egui::TextStyle::Small)); // Updated legend
 
              plot.show(ui, |ui| {
-                 ui.line(Line::new("CPU", PlotPoints::from_iter(self.time_pts.iter().zip(self.cpu_hist.iter()).map(|(&t,&v)|[t,v]))).color(COL_ACCENT_1).width(2.0));
-                 ui.line(Line::new("RAM", PlotPoints::from_iter(self.time_pts.iter().zip(self.ram_hist.iter()).map(|(&t,&v)|[t,v]))).color(COL_ACCENT_2).width(2.0));
-                 ui.line(Line::new("GPU", PlotPoints::from_iter(self.time_pts.iter().zip(self.gpu_hist.iter()).map(|(&t,&v)|[t,v]))).color(COL_ACCENT_3).width(2.0));
+                 ui.line(Line::new("CPU", PlotPoints::from_iter(self.time_pts.iter().zip(self.cpu_hist.iter()).map(|(&t,&v)|[t,v]))).color(current_theme.accent1).width(2.0));
+                 ui.line(Line::new("RAM", PlotPoints::from_iter(self.time_pts.iter().zip(self.ram_hist.iter()).map(|(&t,&v)|[t,v]))).color(current_theme.accent2).width(2.0));
+                 ui.line(Line::new("GPU", PlotPoints::from_iter(self.time_pts.iter().zip(self.gpu_hist.iter()).map(|(&t,&v)|[t,v]))).color(current_theme.accent3).width(2.0));
              });
              
              ui.add_space(5.0);
              ui.with_layout(egui::Layout::right_to_left(egui::Align::Min), |ui| {
                  ui.label(RichText::new("ONLINE").size(10.0).color(Color32::GREEN));
-                 ui.label(RichText::new("SYSTEM STATUS:").size(10.0).color(COL_TEXT_DIM));
+                 ui.label(RichText::new("SYSTEM STATUS:").size(10.0).color(current_theme.text_dim));
              });
         });
+        
+        self.current_theme_index = selected_theme_index;
         
         ctx.request_repaint_after(Duration::from_millis(100));
     }
