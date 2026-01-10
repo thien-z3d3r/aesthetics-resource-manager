@@ -49,7 +49,7 @@ cargo build --release
 2.  **Install Build Tools:** During Rust installation, it will ask for **Visual Studio C++ Build Tools**. Install them.
 3.  **Build:**
     Open PowerShell or Command Prompt:
-    ```powershell
+    ```bash
 git clone https://github.com/yourusername/zen_monitor.git
 cd zen_monitor
 cargo build --release
