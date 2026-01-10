@@ -111,7 +111,7 @@ struct ZenMonitor {
 }
 
 impl ZenMonitor {
-    fn new(cc: &eframe::CreationContext<'_>) -> Self {
+    fn new(cc: &eframe::CreationContext<'_>, initial_theme_idx: usize) -> Self {
         let mut style = (*cc.egui_ctx.style()).clone();
         style.visuals.window_fill = Color32::TRANSPARENT; // Let our panel handle bg
         style.visuals.panel_fill = Color32::TRANSPARENT;
@@ -119,6 +119,13 @@ impl ZenMonitor {
 
         let mut system = System::new_all();
         system.refresh_all();
+
+        let themes = Theme::presets();
+        let current_theme_index = if initial_theme_idx < themes.len() {
+            initial_theme_idx
+        } else {
+            0
+        };
         
         Self {
             system,
@@ -131,8 +138,8 @@ impl ZenMonitor {
             start_time: Instant::now(),
             last_update: Instant::now(),
             gpu_timer: Instant::now() - Duration::from_secs(5),
-            themes: Theme::presets(),
-            current_theme_index: 0,
+            themes,
+            current_theme_index,
         }
     }
 
@@ -398,6 +405,15 @@ impl eframe::App for ZenMonitor {
 }
 
 fn main() -> eframe::Result<()> {
+    // Basic argument parsing
+    let args: Vec<String> = std::env::args().collect();
+    let mut initial_theme = 0;
+    if let Some(pos) = args.iter().position(|r| r == "--theme") {
+        if pos + 1 < args.len() {
+             initial_theme = args[pos + 1].parse().unwrap_or(0);
+        }
+    }
+
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
             .with_inner_size([480.0, 420.0])
@@ -406,5 +422,5 @@ fn main() -> eframe::Result<()> {
             .with_resizable(false),
         ..Default::default()
     };
-    eframe::run_native("Zen Monitor", options, Box::new(|cc| Ok(Box::new(ZenMonitor::new(cc)))))
+    eframe::run_native("Zen Monitor", options, Box::new(move |cc| Ok(Box::new(ZenMonitor::new(cc, initial_theme)))))
 }

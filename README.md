@@ -2,13 +2,38 @@
 
 **Zen Monitor** is a high-performance, aesthetically pleasing system monitoring tool designed for **Arch Linux (Hyprland)**, but compatible with all major Linux distributions and Windows 11. Built with **Rust** and `egui`, it features a "Cyberpunk/Glassmorphism" UI with real-time graphs and GPU support.
 
-![Zen Monitor](https://placehold.co/800x400?text=Zen+Monitor+Preview)
+![Zen Monitor Preview](assets/screenshots/theme_cyberpunk.png)
 
 ## Features
 *   **Aesthetics:** Transparent, borderless window designed for tiling window managers (Hyprland, Sway) or modern Windows setups.
+*   **Themes:** Built-in theme switcher with presets (Cyberpunk, Catppuccin, Tokyo Night, Dark, Light).
 *   **Performance:** Lightweight (~15MB RAM), written in Rust.
 *   **Metrics:** Real-time CPU usage/temps, RAM usage, and NVIDIA GPU stats (via `nvidia-smi`).
 *   **Visuals:** Neon gauges, historic plotting, and a custom HUD interface.
+
+## Theme Gallery
+
+| Theme | Preview |
+| :--- | :--- |
+| **Cyberpunk** (Default) | ![Cyberpunk](assets/screenshots/theme_cyberpunk.png) |
+| **Catppuccin Mocha** | ![Catppuccin](assets/screenshots/theme_catppuccin.png) |
+| **Tokyo Night** | ![Tokyo Night](assets/screenshots/theme_tokyo_night.png) |
+| **Dark Traditional** | ![Dark](assets/screenshots/theme_dark.png) |
+| **Light Traditional** | ![Light](assets/screenshots/theme_light.png) |
+
+### 📸 Contributing Screenshots
+If the images above are missing, you can help by taking screenshots!
+1. Build the release version: `cargo build --release`
+2. Run each theme and take a screenshot (window only):
+   ```bash
+   # 0: Cyberpunk, 1: Catppuccin, 2: Tokyo Night, 3: Dark, 4: Light
+   ./target/release/zen_monitor --theme 0  # Screenshot -> assets/screenshots/theme_cyberpunk.png
+   ./target/release/zen_monitor --theme 1  # Screenshot -> assets/screenshots/theme_catppuccin.png
+   ./target/release/zen_monitor --theme 2  # Screenshot -> assets/screenshots/theme_tokyo_night.png
+   ./target/release/zen_monitor --theme 3  # Screenshot -> assets/screenshots/theme_dark.png
+   ./target/release/zen_monitor --theme 4  # Screenshot -> assets/screenshots/theme_light.png
+   ```
+3. Save them to the `assets/screenshots/` folder and push!
 
 ## Installation
 
@@ -77,6 +102,7 @@ exec-once = /path/to/your/zen_monitor/target/release/zen_monitor
 ### Window Management
 *   **Drag:** Click and drag the top title bar area to move the window.
 *   **Close:** Click the small 'X' in the top right corner.
+*   **Theme Switcher:** Use the dropdown in the top right corner to change themes.
 *   **Hyprland Config (Optional):**
     To make it float and look perfect in Hyprland, add this to `~/.config/hypr/hyprland.conf`:
     ```ini
