@@ -48,16 +48,33 @@ cargo build --release
 1.  **Install Rust:** Download `rustup-init.exe` from [rust-lang.org](https://www.rust-lang.org/tools/install).
 2.  **Install Build Tools:** During Rust installation, it will ask for **Visual Studio C++ Build Tools**. Install them.
 3.  **Build:**
-    Open PowerShell or Command Prompt:
-    ```bash
-git clone https://github.com/yourusername/zen_monitor.git
-cd zen_monitor
-cargo build --release
-.	arget\release\zen_monitor.exe
+    Open PowerShell:
+    ```powershell
+    git clone https://github.com/yourusername/zen_monitor.git
+    cd zen_monitor
+    cargo build --release
+    .\target\release\zen_monitor.exe
     ```
 
 ## Usage
 
+### Running in Background (Arch / Hyprland)
+
+To run **Zen Monitor** without keeping a terminal open, you have a few options:
+
+**Option A: Run from Terminal (Detached)**
+```bash
+./target/release/zen_monitor > /dev/null 2>&1 & disown
+```
+
+**Option B: Auto-Start with Hyprland (Recommended)**
+Add this line to your `~/.config/hypr/hyprland.conf` to launch it automatically when you log in:
+```ini
+exec-once = /path/to/your/zen_monitor/target/release/zen_monitor
+```
+*(Make sure to replace `/path/to/your/...` with the actual full path)*
+
+### Window Management
 *   **Drag:** Click and drag the top title bar area to move the window.
 *   **Close:** Click the small 'X' in the top right corner.
 *   **Hyprland Config (Optional):**
