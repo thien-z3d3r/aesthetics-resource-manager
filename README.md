@@ -75,7 +75,7 @@ cargo build --release
 3.  **Build:**
     Open PowerShell:
     ```powershell
-    git clone https://github.com/thien-z3d3r/zen_monitor.git
+    git clone https://github.com/thien-z3d3r/aesthetics-resource-manager
     cd zen_monitor
     cargo build --release
     .\target\release\zen_monitor.exe
