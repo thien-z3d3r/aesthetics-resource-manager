@@ -62,7 +62,7 @@ sudo dnf install cargo openssl-devel libxcb-devel libxkbcommon-devel gtk3-devel
 
 #### 2. Build & Run
 ```bash
-git clone https://github.com/yourusername/zen_monitor.git
+git clone https://github.com/thien-z3d3r/aesthetics-resource-manager
 cd zen_monitor
 cargo build --release
 ./target/release/zen_monitor
